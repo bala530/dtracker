@@ -15,6 +15,7 @@ import {
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { useQueryClient } from "@tanstack/react-query";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ import { ChevronLeftIcon, Trash2Icon, Loader2, MessageSquareIcon, PaperclipIcon,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+
+const ENVIRONMENTS = ["SBX", "DEV", "QAS", "PRD"] as const;
 
 export default function DefectDetail() {
   const { id: idParam } = useParams<{ id: string }>();
@@ -240,11 +243,16 @@ export default function DefectDetail() {
               </div>
               <div className="space-y-2">
                 <Label className="font-mono text-xs uppercase text-muted-foreground">Environment</Label>
-                <Input 
-                  value={editEnv} 
-                  onChange={(e) => setEditEnv(e.target.value)}
-                  className="rounded-none font-mono text-sm"
-                />
+                <Select value={editEnv} onValueChange={setEditEnv}>
+                  <SelectTrigger className="rounded-none font-mono text-sm">
+                    <SelectValue placeholder="Select environment" />
+                  </SelectTrigger>
+                  <SelectContent rounded="none">
+                    {ENVIRONMENTS.map((env) => (
+                      <SelectItem key={env} value={env}>{env}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-none">Cancel</Button>

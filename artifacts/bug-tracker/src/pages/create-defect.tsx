@@ -14,9 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronLeftIcon, Loader2, PaperclipIcon, XIcon, ImageIcon } from "lucide-react";
 import { Link } from "wouter";
 
+const ENVIRONMENTS = ["SBX", "DEV", "QAS", "PRD"] as const;
+
 const formSchema = z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
-  environment: z.string().min(2, "Environment is required"),
+  environment: z.enum(["SBX", "DEV", "QAS", "PRD"]),
   status: z.enum(["reported", "ready_to_retest", "closed"]).default("reported"),
 });
 
@@ -37,7 +39,7 @@ export default function CreateDefect() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
-      environment: "Production",
+      environment: "DEV",
       status: "reported",
     },
   });
@@ -140,9 +142,18 @@ export default function CreateDefect() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-mono uppercase text-xs">Environment</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Production, Staging, macOS Chrome" className="rounded-none focus-visible:ring-primary" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-none focus-visible:ring-primary">
+                          <SelectValue placeholder="Select environment" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent rounded="none">
+                        {ENVIRONMENTS.map((env) => (
+                          <SelectItem key={env} value={env}>{env}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
