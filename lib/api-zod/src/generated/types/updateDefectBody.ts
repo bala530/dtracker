@@ -11,4 +11,5 @@ export interface UpdateDefectBody {
   description?: string;
   status?: UpdateDefectBodyStatus;
   environment?: string;
+  projectId?: number;
 }

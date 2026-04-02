@@ -107,6 +107,7 @@ export default function Dashboard() {
                 <tr>
                   <th className="px-4 py-3 font-medium">ID</th>
                   <th className="px-4 py-3 font-medium">Description</th>
+                  <th className="px-4 py-3 font-medium">Project</th>
                   <th className="px-4 py-3 font-medium">Environment</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Reported On</th>
@@ -118,6 +119,7 @@ export default function Dashboard() {
                     <tr key={i} className="border-b border-border/50">
                       <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
                       <td className="px-4 py-3"><Skeleton className="h-4 w-full max-w-md" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
                       <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
                       <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
@@ -125,7 +127,7 @@ export default function Dashboard() {
                   ))
                 ) : defects?.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                       No defects found matching your criteria.
                     </td>
                   </tr>
@@ -139,6 +141,11 @@ export default function Dashboard() {
                       </td>
                       <td className="px-4 py-3 font-medium truncate max-w-[200px] md:max-w-md lg:max-w-xl">
                         {defect.description}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {defect.projectName ?? "—"}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 text-muted-foreground border border-border">

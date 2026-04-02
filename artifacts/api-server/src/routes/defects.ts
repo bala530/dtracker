@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, defectsTable, commentsTable, attachmentsTable } from "@workspace/db";
+import { db, defectsTable, commentsTable, attachmentsTable, projectsTable } from "@workspace/db";
 import {
   ListDefectsQueryParams,
   ListDefectsResponse,
@@ -24,13 +24,18 @@ import {
 
 const router: IRouter = Router();
 
-function formatDefect(row: typeof defectsTable.$inferSelect) {
+function formatDefect(
+  row: typeof defectsTable.$inferSelect,
+  project?: typeof projectsTable.$inferSelect | null
+) {
   return {
     id: row.id,
     defectId: row.defectId,
     description: row.description,
     status: row.status,
     environment: row.environment,
+    projectId: row.projectId ?? null,
+    projectName: project?.name ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -91,12 +96,14 @@ router.get("/defects", async (req, res): Promise<void> => {
     conditions.push(eq(defectsTable.environment, params.data.environment));
   }
 
-  const defects =
-    conditions.length > 0
-      ? await db.select().from(defectsTable).where(and(...conditions)).orderBy(defectsTable.id)
-      : await db.select().from(defectsTable).orderBy(defectsTable.id);
+  const rows = await db
+    .select()
+    .from(defectsTable)
+    .leftJoin(projectsTable, eq(defectsTable.projectId, projectsTable.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(defectsTable.id);
 
-  res.json(ListDefectsResponse.parse(defects.map(formatDefect)));
+  res.json(ListDefectsResponse.parse(rows.map((r) => formatDefect(r.defects, r.projects))));
 });
 
 router.post("/defects", async (req, res): Promise<void> => {
@@ -115,10 +122,15 @@ router.post("/defects", async (req, res): Promise<void> => {
       description: parsed.data.description,
       status: parsed.data.status,
       environment: parsed.data.environment,
+      projectId: parsed.data.projectId ?? null,
     })
     .returning();
 
-  res.status(201).json(GetDefectResponse.parse(formatDefect(defect)));
+  const [project] = defect.projectId
+    ? await db.select().from(projectsTable).where(eq(projectsTable.id, defect.projectId))
+    : [null];
+
+  res.status(201).json(GetDefectResponse.parse(formatDefect(defect, project)));
 });
 
 router.get("/defects/:id", async (req, res): Promise<void> => {
@@ -129,13 +141,18 @@ router.get("/defects/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [defect] = await db.select().from(defectsTable).where(eq(defectsTable.id, params.data.id));
-  if (!defect) {
+  const [row] = await db
+    .select()
+    .from(defectsTable)
+    .leftJoin(projectsTable, eq(defectsTable.projectId, projectsTable.id))
+    .where(eq(defectsTable.id, params.data.id));
+
+  if (!row) {
     res.status(404).json({ error: "Defect not found" });
     return;
   }
 
-  res.json(GetDefectResponse.parse(formatDefect(defect)));
+  res.json(GetDefectResponse.parse(formatDefect(row.defects, row.projects)));
 });
 
 router.patch("/defects/:id", async (req, res): Promise<void> => {
@@ -156,6 +173,7 @@ router.patch("/defects/:id", async (req, res): Promise<void> => {
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
   if (parsed.data.environment !== undefined) updateData.environment = parsed.data.environment;
+  if (parsed.data.projectId !== undefined) updateData.projectId = parsed.data.projectId;
 
   const [defect] = await db
     .update(defectsTable)
@@ -168,7 +186,11 @@ router.patch("/defects/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(UpdateDefectResponse.parse(formatDefect(defect)));
+  const [project] = defect.projectId
+    ? await db.select().from(projectsTable).where(eq(projectsTable.id, defect.projectId))
+    : [null];
+
+  res.json(UpdateDefectResponse.parse(formatDefect(defect, project)));
 });
 
 router.delete("/defects/:id", async (req, res): Promise<void> => {

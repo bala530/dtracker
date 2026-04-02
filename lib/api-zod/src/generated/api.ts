@@ -29,6 +29,8 @@ export const ListDefectsResponseItem = zod.object({
   description: zod.string(),
   status: zod.enum(["reported", "ready_to_retest", "closed"]),
   environment: zod.string(),
+  projectId: zod.number().nullish(),
+  projectName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -41,6 +43,7 @@ export const CreateDefectBody = zod.object({
   description: zod.string(),
   status: zod.enum(["reported", "ready_to_retest", "closed"]),
   environment: zod.string(),
+  projectId: zod.number(),
 });
 
 /**
@@ -56,6 +59,8 @@ export const GetDefectResponse = zod.object({
   description: zod.string(),
   status: zod.enum(["reported", "ready_to_retest", "closed"]),
   environment: zod.string(),
+  projectId: zod.number().nullish(),
+  projectName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -71,6 +76,7 @@ export const UpdateDefectBody = zod.object({
   description: zod.string().optional(),
   status: zod.enum(["reported", "ready_to_retest", "closed"]).optional(),
   environment: zod.string().optional(),
+  projectId: zod.number().optional(),
 });
 
 export const UpdateDefectResponse = zod.object({
@@ -79,6 +85,8 @@ export const UpdateDefectResponse = zod.object({
   description: zod.string(),
   status: zod.enum(["reported", "ready_to_retest", "closed"]),
   environment: zod.string(),
+  projectId: zod.number().nullish(),
+  projectName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -148,6 +156,44 @@ export const AddAttachmentBody = zod.object({
   fileUrl: zod.string(),
   fileSize: zod.number().optional(),
   mimeType: zod.string().optional(),
+});
+
+/**
+ * @summary List all projects
+ */
+export const ListProjectsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
+
+/**
+ * @summary Create a new project
+ */
+export const CreateProjectBody = zod.object({
+  name: zod.string(),
+  isDefault: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a project
+ */
+export const UpdateProjectParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateProjectBody = zod.object({
+  name: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+});
+
+export const UpdateProjectResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
 });
 
 /**

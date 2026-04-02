@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateDefect, useAddAttachment } from "@workspace/api-client-react";
+import { useCreateDefect, useAddAttachment, useListProjects, getListProjectsQueryKey } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -20,6 +20,7 @@ const formSchema = z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
   environment: z.enum(["SBX", "DEV", "QAS", "PRD"]),
   status: z.enum(["reported", "ready_to_retest", "closed"]).default("reported"),
+  projectId: z.coerce.number({ required_error: "Project is required" }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,14 +36,27 @@ export default function CreateDefect() {
 
   const { uploadFile, isUploading } = useUpload();
 
+  const { data: projects } = useListProjects({
+    query: { queryKey: getListProjectsQueryKey() }
+  });
+
+  const defaultProject = projects?.find((p) => p.isDefault) ?? projects?.[0];
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: "",
       environment: "DEV",
       status: "reported",
+      projectId: undefined,
     },
   });
+
+  // Set default projectId once projects load
+  const currentProjectId = form.watch("projectId");
+  if (!currentProjectId && defaultProject) {
+    form.setValue("projectId", defaultProject.id);
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -58,7 +72,7 @@ export default function CreateDefect() {
     setIsSubmitting(true);
     try {
       const defect = await new Promise<{ id: number; defectId: string }>((resolve, reject) => {
-        createDefect.mutate({ data: values }, {
+        createDefect.mutate({ data: { ...values, projectId: values.projectId } }, {
           onSuccess: resolve,
           onError: reject,
         });
@@ -130,6 +144,32 @@ export default function CreateDefect() {
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono uppercase text-xs">Project</FormLabel>
+                  <Select
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={field.value ? String(field.value) : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="rounded-none focus-visible:ring-primary">
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent rounded="none">
+                      {(projects ?? []).map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

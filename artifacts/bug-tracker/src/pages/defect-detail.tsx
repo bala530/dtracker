@@ -9,9 +9,11 @@ import {
   useAddComment,
   useListAttachments,
   useAddAttachment,
+  useListProjects,
   getGetDefectQueryKey,
   getListCommentsQueryKey,
-  getListAttachmentsQueryKey
+  getListAttachmentsQueryKey,
+  getListProjectsQueryKey
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -61,9 +63,14 @@ export default function DefectDetail() {
   const addAttachment = useAddAttachment();
   const { uploadFile, isUploading } = useUpload();
 
+  const { data: projects } = useListProjects({
+    query: { queryKey: getListProjectsQueryKey() }
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState("");
   const [editEnv, setEditEnv] = useState("");
+  const [editProjectId, setEditProjectId] = useState<number | null>(null);
 
   const handleUpdateStatus = (newStatus: "reported" | "ready_to_retest" | "closed") => {
     updateDefect.mutate({ id, data: { status: newStatus } }, {
@@ -77,10 +84,12 @@ export default function DefectDetail() {
   };
 
   const handleSaveEdits = () => {
-    updateDefect.mutate({ id, data: { description: editDesc, environment: editEnv } }, {
+    const updatePayload: Record<string, unknown> = { description: editDesc, environment: editEnv };
+    if (editProjectId !== null) updatePayload.projectId = editProjectId;
+    updateDefect.mutate({ id, data: updatePayload as any }, {
       onSuccess: (data) => {
         queryClient.setQueryData(getGetDefectQueryKey(id), (old: any) => 
-          old ? { ...old, description: data.description, environment: data.environment } : old
+          old ? { ...old, description: data.description, environment: data.environment, projectId: data.projectId, projectName: data.projectName } : old
         );
         setIsEditing(false);
         toast({ title: "Defect updated" });
@@ -92,6 +101,7 @@ export default function DefectDetail() {
     if (defect) {
       setEditDesc(defect.description);
       setEditEnv(defect.environment);
+      setEditProjectId(defect.projectId ?? null);
       setIsEditing(true);
     }
   };
@@ -241,18 +251,36 @@ export default function DefectDetail() {
                   className="min-h-[150px] font-sans text-base rounded-none"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase text-muted-foreground">Environment</Label>
-                <Select value={editEnv} onValueChange={setEditEnv}>
-                  <SelectTrigger className="rounded-none font-mono text-sm">
-                    <SelectValue placeholder="Select environment" />
-                  </SelectTrigger>
-                  <SelectContent rounded="none">
-                    {ENVIRONMENTS.map((env) => (
-                      <SelectItem key={env} value={env}>{env}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-mono text-xs uppercase text-muted-foreground">Environment</Label>
+                  <Select value={editEnv} onValueChange={setEditEnv}>
+                    <SelectTrigger className="rounded-none font-mono text-sm">
+                      <SelectValue placeholder="Select environment" />
+                    </SelectTrigger>
+                    <SelectContent rounded="none">
+                      {ENVIRONMENTS.map((env) => (
+                        <SelectItem key={env} value={env}>{env}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-mono text-xs uppercase text-muted-foreground">Project</Label>
+                  <Select
+                    value={editProjectId !== null ? String(editProjectId) : ""}
+                    onValueChange={(v) => setEditProjectId(Number(v))}
+                  >
+                    <SelectTrigger className="rounded-none font-mono text-sm">
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent rounded="none">
+                      {(projects ?? []).map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-none">Cancel</Button>
@@ -271,10 +299,18 @@ export default function DefectDetail() {
                 </div>
               </div>
               
-              <div className="pt-4 border-t border-border/50">
-                <Label className="font-mono text-xs uppercase text-muted-foreground mb-2 block">Environment</Label>
-                <div className="font-mono text-sm inline-block bg-muted px-2 py-1 border border-border">
-                  {defect.environment}
+              <div className="pt-4 border-t border-border/50 flex flex-wrap gap-6">
+                <div>
+                  <Label className="font-mono text-xs uppercase text-muted-foreground mb-2 block">Environment</Label>
+                  <div className="font-mono text-sm inline-block bg-muted px-2 py-1 border border-border">
+                    {defect.environment}
+                  </div>
+                </div>
+                <div>
+                  <Label className="font-mono text-xs uppercase text-muted-foreground mb-2 block">Project</Label>
+                  <div className="font-mono text-sm inline-block bg-muted px-2 py-1 border border-border">
+                    {defect.projectName ?? "—"}
+                  </div>
                 </div>
               </div>
             </>

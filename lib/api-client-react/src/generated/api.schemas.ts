@@ -9,6 +9,23 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface Project {
+  id: number;
+  name: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CreateProjectBody {
+  name: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateProjectBody {
+  name?: string;
+  isDefault?: boolean;
+}
+
 export type DefectStatus = (typeof DefectStatus)[keyof typeof DefectStatus];
 
 export const DefectStatus = {
@@ -24,6 +41,8 @@ export interface Defect {
   description: string;
   status: DefectStatus;
   environment: string;
+  projectId?: number | null;
+  projectName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +60,7 @@ export interface CreateDefectBody {
   description: string;
   status: CreateDefectBodyStatus;
   environment: string;
+  projectId: number;
 }
 
 export type UpdateDefectBodyStatus =
@@ -56,6 +76,7 @@ export interface UpdateDefectBody {
   description?: string;
   status?: UpdateDefectBodyStatus;
   environment?: string;
+  projectId?: number;
 }
 
 export interface Comment {

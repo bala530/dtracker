@@ -11,4 +11,5 @@ export interface CreateDefectBody {
   description: string;
   status: CreateDefectBodyStatus;
   environment: string;
+  projectId: number;
 }

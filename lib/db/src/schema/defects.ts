@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { projectsTable } from "./projects";
 
 export const defectsTable = pgTable("defects", {
   id: serial("id").primaryKey(),
@@ -8,6 +9,7 @@ export const defectsTable = pgTable("defects", {
   description: text("description").notNull(),
   status: text("status").notNull().default("reported"),
   environment: text("environment").notNull(),
+  projectId: integer("project_id").references(() => projectsTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

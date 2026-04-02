@@ -14,6 +14,8 @@ export interface Defect {
   description: string;
   status: DefectStatus;
   environment: string;
+  projectId?: number | null;
+  projectName?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
