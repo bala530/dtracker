@@ -20,3 +20,5 @@ export * from "./listDefectsParams";
 export * from "./listDefectsStatus";
 export * from "./updateDefectBody";
 export * from "./updateDefectBodyStatus";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";
