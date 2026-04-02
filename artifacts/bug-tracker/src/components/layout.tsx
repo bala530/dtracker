@@ -1,7 +1,14 @@
 import { Link } from "wouter";
-import { BugIcon } from "lucide-react";
+import { BugIcon, LogOutIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+interface LayoutProps {
+  children: React.ReactNode;
+  onLogout?: () => void;
+  username?: string | null;
+}
+
+export function Layout({ children, onLogout, username }: LayoutProps) {
   return (
     <div className="min-h-[100dvh] flex flex-col">
       <header className="border-b border-border bg-card sticky top-0 z-10">
@@ -16,6 +23,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/defects/new" className="text-sm font-medium hover:text-primary transition-colors">
               Log Defect
             </Link>
+            {username && (
+              <span className="text-xs font-mono text-muted-foreground hidden sm:block">{username}</span>
+            )}
+            {onLogout && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLogout}
+                className="h-7 px-2 text-xs font-mono rounded-none text-muted-foreground hover:text-foreground"
+              >
+                <LogOutIcon className="w-3.5 h-3.5 mr-1.5" />
+                Sign Out
+              </Button>
+            )}
           </div>
         </div>
       </header>

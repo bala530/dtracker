@@ -13,16 +13,16 @@ import {
   getListCommentsQueryKey,
   getListAttachmentsQueryKey
 } from "@workspace/api-client-react";
+import { useUpload } from "@workspace/object-storage-web";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DefectStatusBadge } from "@/components/defect-status-badge";
-import { ChevronLeftIcon, Trash2Icon, Loader2, MessageSquareIcon, PaperclipIcon, CheckIcon, Edit2Icon, LinkIcon, FileIcon } from "lucide-react";
+import { ChevronLeftIcon, Trash2Icon, Loader2, MessageSquareIcon, PaperclipIcon, Edit2Icon, FileIcon, ImageIcon, UploadIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
 export default function DefectDetail() {
@@ -56,6 +56,7 @@ export default function DefectDetail() {
   const deleteDefect = useDeleteDefect();
   const addComment = useAddComment();
   const addAttachment = useAddAttachment();
+  const { uploadFile, isUploading } = useUpload();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState("");
@@ -121,25 +122,47 @@ export default function DefectDetail() {
     });
   };
 
-  // Attachment state
-  const [attachName, setAttachName] = useState("");
-  const [attachUrl, setAttachUrl] = useState("");
-  const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
+  // File upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-  const handleAddAttachment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!attachName.trim() || !attachUrl.trim()) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
-    addAttachment.mutate({ id, data: { fileName: attachName, fileUrl: attachUrl } }, {
-      onSuccess: (newAttachment) => {
-        queryClient.setQueryData(getListAttachmentsQueryKey(id), (old: any) => 
-          old ? [...old, newAttachment] : [newAttachment]
-        );
-        setAttachName("");
-        setAttachUrl("");
-        setIsAttachDialogOpen(false);
+    setIsUploadingFile(true);
+    for (const file of files) {
+      try {
+        const uploaded = await uploadFile(file);
+        if (uploaded) {
+          const fileUrl = `/api/storage${uploaded.objectPath}`;
+          await new Promise<void>((resolve, reject) => {
+            addAttachment.mutate({
+              id,
+              data: {
+                fileName: file.name,
+                fileUrl,
+                fileSize: file.size,
+                mimeType: file.type || undefined,
+              },
+            }, {
+              onSuccess: (newAttachment) => {
+                queryClient.setQueryData(getListAttachmentsQueryKey(id), (old: any) =>
+                  old ? [...old, newAttachment] : [newAttachment]
+                );
+                resolve();
+              },
+              onError: reject,
+            });
+          });
+        }
+      } catch {
+        toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
       }
-    });
+    }
+    setIsUploadingFile(false);
+    toast({ title: `${files.length === 1 ? "File" : `${files.length} files`} attached successfully` });
   };
 
   if (isDefectLoading) {
@@ -159,6 +182,8 @@ export default function DefectDetail() {
       </div>
     );
   }
+
+  const uploadBusy = isUploadingFile || isUploading;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-500">
@@ -306,57 +331,13 @@ export default function DefectDetail() {
             <h3 className="font-mono text-sm uppercase font-bold tracking-wider flex items-center">
               <PaperclipIcon className="w-4 h-4 mr-2" /> Attachments
             </h3>
-            <Dialog open={isAttachDialogOpen} onOpenChange={setIsAttachDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs rounded-none font-mono">
-                  + Add Link
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-none border-border">
-                <DialogHeader>
-                  <DialogTitle className="font-mono uppercase tracking-wider text-sm">Add Attachment Link</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAddAttachment} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label className="font-mono text-xs">File Name / Description</Label>
-                    <Input 
-                      placeholder="e.g., Error Screenshot, Log File" 
-                      value={attachName} 
-                      onChange={e => setAttachName(e.target.value)}
-                      className="rounded-none"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-mono text-xs">URL (Google Drive, Dropbox, etc.)</Label>
-                    <Input 
-                      type="url"
-                      placeholder="https://..." 
-                      value={attachUrl} 
-                      onChange={e => setAttachUrl(e.target.value)}
-                      className="rounded-none"
-                      required
-                    />
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline" type="button" className="rounded-none">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" disabled={addAttachment.isPending || !attachName.trim() || !attachUrl.trim()} className="rounded-none">
-                      {addAttachment.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Add Link
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
 
           <div className="space-y-2">
             {isAttachmentsLoading ? (
               <Skeleton className="h-12 w-full" />
             ) : attachments?.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic font-mono">No attachments.</p>
+              <p className="text-sm text-muted-foreground italic font-mono">No attachments yet.</p>
             ) : (
               attachments?.map(attachment => (
                 <a 
@@ -367,7 +348,11 @@ export default function DefectDetail() {
                   className="flex items-center gap-3 p-3 bg-card border border-border hover:bg-muted transition-colors group"
                 >
                   <div className="bg-muted p-2 border border-border group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
-                    <FileIcon className="w-4 h-4" />
+                    {attachment.mimeType?.startsWith("image/") ? (
+                      <ImageIcon className="w-4 h-4" />
+                    ) : (
+                      <FileIcon className="w-4 h-4" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
@@ -377,10 +362,38 @@ export default function DefectDetail() {
                       {format(new Date(attachment.createdAt), "MMM d, yyyy")}
                     </div>
                   </div>
-                  <LinkIcon className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-50 group-hover:opacity-100 transition-all" />
                 </a>
               ))
             )}
+          </div>
+
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.txt,.log,.csv,.zip"
+              className="hidden"
+              onChange={handleFileChange}
+              id="detail-file-upload"
+            />
+            <label
+              htmlFor="detail-file-upload"
+              className={`flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors ${uploadBusy ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              {uploadBusy ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <UploadIcon className="w-4 h-4" />
+                  Upload Attachment
+                </>
+              )}
+            </label>
+            <p className="mt-1.5 text-xs text-muted-foreground">Images, PDF, text, log, CSV, zip</p>
           </div>
         </div>
       </div>
