@@ -6,12 +6,15 @@ FROM base AS deps
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json                  ./lib/db/
-COPY lib/api-spec/package.json            ./lib/api-spec/
-COPY lib/api-zod/package.json             ./lib/api-zod/
-COPY lib/object-storage-web/package.json  ./lib/object-storage-web/
-COPY lib/api-client-react/package.json    ./lib/api-client-react/
-COPY artifacts/bug-tracker/package.json   ./artifacts/bug-tracker/
+COPY lib/db/package.json                    ./lib/db/
+COPY lib/api-spec/package.json              ./lib/api-spec/
+COPY lib/api-zod/package.json               ./lib/api-zod/
+COPY lib/object-storage-web/package.json    ./lib/object-storage-web/
+COPY lib/api-client-react/package.json      ./lib/api-client-react/
+COPY artifacts/bug-tracker/package.json     ./artifacts/bug-tracker/
+COPY artifacts/api-server/package.json      ./artifacts/api-server/
+COPY artifacts/mockup-sandbox/package.json  ./artifacts/mockup-sandbox/
+COPY scripts/package.json                   ./scripts/
 
 RUN pnpm install --frozen-lockfile
 
@@ -19,10 +22,9 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 WORKDIR /app
 
-COPY lib/                  ./lib/
+COPY lib/                   ./lib/
 COPY artifacts/bug-tracker/ ./artifacts/bug-tracker/
 
-# BASE_PATH=/ serves the app at root; PORT is required by vite.config.ts
 ENV BASE_PATH=/
 ENV PORT=3000
 

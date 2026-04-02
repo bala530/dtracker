@@ -7,12 +7,15 @@ WORKDIR /app
 
 # Copy only the manifests first (layer-caching)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json                  ./lib/db/
-COPY lib/api-spec/package.json            ./lib/api-spec/
-COPY lib/api-zod/package.json             ./lib/api-zod/
-COPY lib/object-storage-web/package.json  ./lib/object-storage-web/
-COPY lib/api-client-react/package.json    ./lib/api-client-react/
-COPY artifacts/api-server/package.json    ./artifacts/api-server/
+COPY lib/db/package.json                    ./lib/db/
+COPY lib/api-spec/package.json              ./lib/api-spec/
+COPY lib/api-zod/package.json               ./lib/api-zod/
+COPY lib/object-storage-web/package.json    ./lib/object-storage-web/
+COPY lib/api-client-react/package.json      ./lib/api-client-react/
+COPY artifacts/api-server/package.json      ./artifacts/api-server/
+COPY artifacts/bug-tracker/package.json     ./artifacts/bug-tracker/
+COPY artifacts/mockup-sandbox/package.json  ./artifacts/mockup-sandbox/
+COPY scripts/package.json                   ./scripts/
 
 RUN pnpm install --frozen-lockfile
 
