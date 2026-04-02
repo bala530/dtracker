@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Bug Tracker API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: defects
+    description: Defect management operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,209 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /defects:
+    get:
+      operationId: listDefects
+      tags: [defects]
+      summary: List all defects
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [reported, ready_to_retest, closed]
+          required: false
+        - in: query
+          name: environment
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: List of defects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Defect"
+    post:
+      operationId: createDefect
+      tags: [defects]
+      summary: Create a new defect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDefectBody"
+      responses:
+        "201":
+          description: Defect created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Defect"
+
+  /defects/{id}:
+    get:
+      operationId: getDefect
+      tags: [defects]
+      summary: Get a single defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Defect found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Defect"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDefect
+      tags: [defects]
+      summary: Update a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDefectBody"
+      responses:
+        "200":
+          description: Defect updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Defect"
+    delete:
+      operationId: deleteDefect
+      tags: [defects]
+      summary: Delete a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /defects/{id}/comments:
+    get:
+      operationId: listComments
+      tags: [defects]
+      summary: List comments for a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: addComment
+      tags: [defects]
+      summary: Add a comment to a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCommentBody"
+      responses:
+        "201":
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /defects/{id}/attachments:
+    get:
+      operationId: listAttachments
+      tags: [defects]
+      summary: List attachments for a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Attachment"
+    post:
+      operationId: addAttachment
+      tags: [defects]
+      summary: Add an attachment URL to a defect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAttachmentBody"
+      responses:
+        "201":
+          description: Attachment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+
+  /defects/stats/summary:
+    get:
+      operationId: getDefectStats
+      tags: [defects]
+      summary: Get summary statistics for defects
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefectStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +239,147 @@ components:
       required:
         - status
 
+    Defect:
+      type: object
+      properties:
+        id:
+          type: integer
+        defectId:
+          type: string
+          description: Human-readable defect ID like DEF-001
+        description:
+          type: string
+        status:
+          type: string
+          enum: [reported, ready_to_retest, closed]
+        environment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - defectId
+        - description
+        - status
+        - environment
+        - createdAt
+        - updatedAt
+
+    CreateDefectBody:
+      type: object
+      properties:
+        description:
+          type: string
+        status:
+          type: string
+          enum: [reported, ready_to_retest, closed]
+        environment:
+          type: string
+      required:
+        - description
+        - status
+        - environment
+
+    UpdateDefectBody:
+      type: object
+      properties:
+        description:
+          type: string
+        status:
+          type: string
+          enum: [reported, ready_to_retest, closed]
+        environment:
+          type: string
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        defectId:
+          type: integer
+        text:
+          type: string
+        author:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - defectId
+        - text
+        - author
+        - createdAt
+
+    AddCommentBody:
+      type: object
+      properties:
+        text:
+          type: string
+        author:
+          type: string
+      required:
+        - text
+        - author
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+        defectId:
+          type: integer
+        fileName:
+          type: string
+        fileUrl:
+          type: string
+        fileSize:
+          type: integer
+        mimeType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - defectId
+        - fileName
+        - fileUrl
+        - createdAt
+
+    AddAttachmentBody:
+      type: object
+      properties:
+        fileName:
+          type: string
+        fileUrl:
+          type: string
+        fileSize:
+          type: integer
+        mimeType:
+          type: string
+      required:
+        - fileName
+        - fileUrl
+
+    DefectStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        reported:
+          type: integer
+        readyToRetest:
+          type: integer
+        closed:
+          type: integer
+      required:
+        - total
+        - reported
+        - readyToRetest
+        - closed
