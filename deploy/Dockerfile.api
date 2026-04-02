@@ -5,6 +5,10 @@ RUN npm install -g pnpm@10
 FROM base AS deps
 WORKDIR /app
 
+# Increase network timeout to avoid hangs on slow connections
+RUN pnpm config set network-timeout 300000 && \
+    pnpm config set fetch-retries 5
+
 # Copy only the manifests first (layer-caching)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY lib/db/package.json                    ./lib/db/
