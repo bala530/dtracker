@@ -1,23 +1,45 @@
 import { Router } from "express";
+import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { eq } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
 
 const authRouter = Router();
+const scryptAsync = promisify(scrypt);
 
-authRouter.post("/auth/login", (req, res) => {
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const [hashedPwd, salt] = hash.split(".");
+  if (!hashedPwd || !salt) return false;
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  const hashedPwdBuf = Buffer.from(hashedPwd, "hex");
+  return timingSafeEqual(buf, hashedPwdBuf);
+}
+
+authRouter.post("/auth/login", async (req, res) => {
   const { username, password } = req.body;
-  const validUser = process.env.APP_USERNAME;
-  const validPass = process.env.APP_PASSWORD;
 
-  if (!validUser || !validPass) {
-    return res.status(500).json({ error: "Server credentials not configured" });
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
   }
 
-  if (username === validUser && password === validPass) {
-    req.session.authenticated = true;
-    req.session.username = username;
-    return res.json({ ok: true, username });
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.username, username));
+
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  return res.status(401).json({ error: "Invalid credentials" });
+  req.session.authenticated = true;
+  req.session.username = username;
+  return res.json({ ok: true, username });
 });
 
 authRouter.post("/auth/logout", (req, res) => {

@@ -29,6 +29,13 @@ COPY artifacts/api-server/ ./artifacts/api-server/
 
 RUN pnpm --filter @workspace/api-server run build
 
+# ── Migrator (runs db push + seed) ──────────────────────────────────────────
+FROM deps AS migrator
+WORKDIR /app
+COPY tsconfig.base.json ./
+COPY lib/ ./lib/
+CMD ["sh", "-c", "pnpm --filter @workspace/db run push && pnpm --filter @workspace/db run seed"]
+
 # ── Runtime ─────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
