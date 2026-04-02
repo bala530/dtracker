@@ -1,0 +1,64 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bugtracker
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d bugtracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://appuser:${DB_PASSWORD}@db:5432/bugtracker
+      SESSION_SECRET: ${SESSION_SECRET}
+      APP_USERNAME: ${APP_USERNAME}
+      APP_PASSWORD: ${APP_PASSWORD}
+      PORT: 8080
+      NODE_ENV: production
+    # Uncomment if you set up GCS for file attachments:
+    # volumes:
+    #   - ./gcs-key.json:/app/gcs-key.json:ro
+    # environment:
+    #   GOOGLE_APPLICATION_CREDENTIALS: /app/gcs-key.json
+    #   DEFAULT_OBJECT_STORAGE_BUCKET_ID: your-bucket-name
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+  # DB migration job — runs once on startup then exits
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://appuser:${DB_PASSWORD}@db:5432/bugtracker
+    entrypoint: ["sh", "-c", "cd /app && pnpm --filter @workspace/db run push"]
+    restart: "no"
+
+volumes:
+  pgdata:

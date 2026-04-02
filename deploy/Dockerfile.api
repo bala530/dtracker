@@ -1,0 +1,39 @@
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@10
+
+# ── Install deps ────────────────────────────────────────────────────────────
+FROM base AS deps
+WORKDIR /app
+
+# Copy only the manifests first (layer-caching)
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json                  ./lib/db/
+COPY lib/api-spec/package.json            ./lib/api-spec/
+COPY lib/api-zod/package.json             ./lib/api-zod/
+COPY lib/object-storage-web/package.json  ./lib/object-storage-web/
+COPY lib/api-client-react/package.json    ./lib/api-client-react/
+COPY artifacts/api-server/package.json    ./artifacts/api-server/
+
+RUN pnpm install --frozen-lockfile
+
+# ── Build ────────────────────────────────────────────────────────────────────
+FROM deps AS builder
+WORKDIR /app
+
+COPY lib/       ./lib/
+COPY artifacts/api-server/ ./artifacts/api-server/
+
+RUN pnpm --filter @workspace/api-server run build
+
+# ── Runtime ─────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Only copy what the bundled server actually needs at runtime
+COPY --from=builder /app/artifacts/api-server/dist ./dist
+
+EXPOSE 8080
+ENV PORT=8080
+ENV NODE_ENV=production
+
+CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
