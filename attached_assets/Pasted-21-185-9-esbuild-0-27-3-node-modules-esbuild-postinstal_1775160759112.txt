@@ -1,0 +1,79 @@
+21 185.9 .../esbuild@0.27.3/node_modules/esbuild postinstall: Done
+#21 192.4 
+#21 192.4 devDependencies:
+#21 192.4 + prettier 3.8.1
+#21 192.4 + typescript 5.9.3
+#21 192.4 
+#21 193.1 . preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+#21 193.6 . preinstall: Done
+#21 197.4 Done in 3m 16.9s using pnpm v10.33.0
+#21 DONE 199.6s
+
+#22 [builder 1/4] WORKDIR /app
+#22 DONE 17.3s
+
+#23 [builder 2/4] COPY lib/                   ./lib/
+#23 DONE 1.0s
+
+#24 [builder 3/4] COPY artifacts/bug-tracker/ ./artifacts/bug-tracker/
+#24 DONE 1.0s
+
+#25 [builder 4/4] RUN pnpm --filter @workspace/bug-tracker run build
+#25 12.27 
+#25 12.27 > @workspace/bug-tracker@0.0.0 build /app/artifacts/bug-tracker
+#25 12.27 > vite build --config vite.config.ts
+#25 12.27 
+#25 16.28 ▲ [WARNING] Cannot find base config file "../../tsconfig.base.json" [tsconfig.json]
+#25 16.28 
+#25 16.28     tsconfig.json:2:13:
+#25 16.28       2 │   "extends": "../../tsconfig.base.json",
+#25 16.28         ╵              ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#25 16.28 
+#25 20.53 vite v7.3.1 building client environment for production...
+#25 22.00 ✓ 0 modules transformed.
+#25 22.01 ✗ Build failed in 506ms
+#25 22.01 error during build:
+#25 22.01 [vite:build-html] failed to resolve "extends":"../../tsconfig.base.json" in /app/artifacts/bug-tracker/tsconfig.json
+#25 22.01 file: /app/artifacts/bug-tracker/index.html
+#25 22.01     at resolveExtends (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:5809:8)
+#25 22.01     at parseExtends (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:5775:71)
+#25 22.01     at parse$13 (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:5677:23)
+#25 22.01     at async loadTsconfigJsonForFile (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6286:37)
+#25 22.01     at async transformWithEsbuild (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6086:55)
+#25 22.01     at async Object.transform (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6172:20)
+#25 22.01     at async transform (file:///app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/es/shared/node-entry.js:21269:16)
+#25 22.01     at async ModuleLoader.addModuleSource (file:///app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/es/shared/node-entry.js:21497:36)
+#25 22.27 /app/artifacts/bug-tracker:
+#25 22.27  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/bug-tracker@0.0.0 build: `vite build --config vite.config.ts`
+#25 22.27 Exit status 1
+#25 ERROR: process "/bin/sh -c pnpm --filter @workspace/bug-tracker run build" did not complete successfully: exit code: 1
+------
+ > [builder 4/4] RUN pnpm --filter @workspace/bug-tracker run build:
+22.01     at parseExtends (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:5775:71)
+22.01     at parse$13 (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:5677:23)
+22.01     at async loadTsconfigJsonForFile (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6286:37)
+22.01     at async transformWithEsbuild (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6086:55)
+22.01     at async Object.transform (file:///app/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:6172:20)
+22.01     at async transform (file:///app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/es/shared/node-entry.js:21269:16)
+22.01     at async ModuleLoader.addModuleSource (file:///app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/es/shared/node-entry.js:21497:36)
+22.27 /app/artifacts/bug-tracker:
+22.27  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/bug-tracker@0.0.0 build: `vite build --config vite.config.ts`
+22.27 Exit status 1
+------
+Dockerfile.web:31
+
+--------------------
+
+  29 |     ENV PORT=3000
+
+  30 |     
+
+  31 | >>> RUN pnpm --filter @workspace/bug-tracker run build
+
+  32 |     
+
+  33 |     # ── Serve with nginx ─────────────────────────────────────────────────────────
+
+--------------------
+
+failed to solve: process "/bin/sh -c pnpm --filter @workspace/bug-tracker run build" did not complete successfully: exit code: 1
